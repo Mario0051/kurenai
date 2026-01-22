@@ -154,22 +154,19 @@ Check <#1248143380437930085> for known issues/problems."#;
 		}
 
 		let content_lower = msg.content.to_lowercase();
-		if content_lower.contains("sil") || content_lower.contains("still") {
-			// 2% if on help channel otherwise 20%
-			let rate = if msg.channel_id.get() == help_channel_id { 0.02 } else { 0.20 };
-
-			if should_reply(rate) {
-				let silly_emojis = [
-					"<a:sildance:1462056515056828499>",
-					"<:sillier:1463878217197682865>",
-					"<a:Sillymambo:1463878469610897485>",
-					"<:stillinstare:1463878652402860228>"
-				];
-
-				let index: usize = rng_range(0..silly_emojis.len());
-				let emoji = silly_emojis[index];
-				let _ = msg.reply(&ctx.http, emoji).await;
-			}
+		// 0.2% if on help channel otherwise 3%
+		let rate = if msg.channel_id.get() == help_channel_id { 0.002 } else { 0.03 };
+		if should_reply(rate) {
+			let silly_emojis = [
+				"<a:sildance:1462056515056828499>",
+				"<:sillier:1463878217197682865>",
+				"<a:Sillymambo:1463878469610897485>",
+				"<:stillinstare:1463878652402860228>"
+			];
+			
+			let index: usize = rng_range(0..silly_emojis.len());
+			let emoji = silly_emojis[index];
+			let _ = msg.reply(&ctx.http, emoji).await;
 		}
 	}
 
