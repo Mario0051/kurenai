@@ -115,15 +115,13 @@ impl EventHandler for Handler {
 			}
 
 			if should_update {
-				let sticky_message = r#"**CHECK THE PINS FIRST BEFORE ASKING A QUESTION**
-** 1. Having runtime errors? Install Hachimi Edge from **<#1248142172004548620>.
-** 2. Did you press "Restart" on the shutdown menu after installing Hachimi?**
-** 3. Do you play Riot games? If so, Vanguard is preventing you to play Umamusume with Hachimi installed.**
-** 4. If none of these cover the answers to the issues you're facing, ping the Helpdesk role.**
+				let sticky_message = r#"# :warning: BEFORE ASKING A QUESTION :warning:
+- Having runtime errors? Install [Hachimi Edge](https://hachimi.noccu.art).
+- Check for your issue in [Troubleshooting](https://hachimi.noccu.art/docs/hachimi/troubleshooting).
+- Check the pins and backread messsages in this channel.
 
-** You will be intentionally ignored if a fix is already available for your problems on the pinned messages, the site or previous messages in this channel.**
-
-Check <#1248143380437930085> for known issues/problems."#;
+You will be intentionally ignored if the sources mentioned above cover your issue.
+Bugs instead of tech issue? Check <#1248143380437930085>."#;
 
 				let old_id = {
 					let mut id_lock = self.last_sticky_id.lock().unwrap();
