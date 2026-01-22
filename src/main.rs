@@ -116,13 +116,13 @@ impl EventHandler for Handler {
 # 5. Have you tried backreading previous messages?
 # 6. If none of these cover the answers to the issues you're facing, ping the Helpdesk role.
 
-**You will be intentionally ignored** if a fix is already available for your problems on the pinned messages, the site or previous messages in this channel.
+## You will be intentionally ignored if a fix is already available for your problems on the pinned messages, the site or previous messages in this channel.
 
 Check <#1248143380437930085> for known issues/problems."#;
 
 				if let Ok(messages) = msg.channel_id.messages(&ctx.http, GetMessages::new().limit(12)).await {
 					for old_msg in messages {
-						if old_msg.author.id == ctx.cache.current_user().id && old_msg.content.starts_with("# 1. Did you press") {
+						if old_msg.author.id == ctx.cache.current_user().id && old_msg.content.starts_with("# CHECK THE PINS FIRST ") {
 							let _ = old_msg.delete(&ctx.http).await;
 							break;
 						}
