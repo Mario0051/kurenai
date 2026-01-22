@@ -119,21 +119,19 @@ Bugs instead of tech issue? Check <#1248143380437930085>."#;
 				let mut last_author = self.last_author_id.lock().unwrap();
 				let mut last_activity = self.last_activity_time.lock().unwrap();
 				let mut id_lock = self.last_sticky_id.lock().unwrap();
-	
-				if let Some(prev_author) = *last_author {
-					if prev_author != msg.author.id {
-						*last_activity = now;
-						should_delete_id = id_lock.take();
-					}
+
+				let is_new_author = last_author.map_or(true, |id| id != msg.author.id);
+				let idle_duration = now.duration_since(*last_activity);
+
+				if is_new_author {
+					should_delete_id = id_lock.take();
+					*last_activity = now;
+				} else if id_lock.is_some() && idle_duration.as_secs() >= 120 {
+					should_delete_id = id_lock.take();
 				}
 
-				if id_lock.is_none() {
-					let idle_duration = now.duration_since(*last_activity);
-					if idle_duration.as_secs() >= 180 {
-						should_post = true;
-					}
-				} else {
-					*last_activity = now;
+				if id_lock.is_none() && idle_duration.as_secs() >= 120 {
+					should_post = true;
 				}
 				*last_author = Some(msg.author.id);
 			}
