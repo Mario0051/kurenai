@@ -101,6 +101,7 @@ async fn start_hourly_download(url: String, filename: String, protect: Arc<Phish
 
 		let tmp_filename = format!("{}.tmp", filename);
 		let status = Command::new("curl")
+			.arg("-4")
 			.arg("-o")
 			.arg(&tmp_filename)
 			.arg(&url)
