@@ -125,21 +125,23 @@ Bugs instead of tech issue? Check <#1248143380437930085>."#;
 
 				if is_new_author {
 					should_delete_id = id_lock.take();
-					*last_activity = now;
 				} else if id_lock.is_some() && idle_duration.as_secs() >= 120 {
 					should_delete_id = id_lock.take();
 				}
 
-				if id_lock.is_none() && idle_duration.as_secs() >= 120 {
+				if id_lock.is_none() && (idle_duration.as_secs() >= 120 || last_author.is_none()) {
 					should_post = true;
 				}
+
+				if is_new_author || should_post {
+					*last_activity = now;
+				}
+
 				*last_author = Some(msg.author.id);
 			}
 	
 			if let Some(id) = should_delete_id {
 				let _ = msg.channel_id.delete_message(&ctx.http, id).await;
-				let mut last_activity = self.last_activity_time.lock().unwrap();
-				*last_activity = now;
 			}
 
 			if should_post {
