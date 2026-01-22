@@ -1,5 +1,6 @@
 use serenity::{
 	async_trait,
+	builder::GetMessages,
 	model::{gateway::Ready, channel::Message},
 	prelude::*
 };
@@ -7,9 +8,9 @@ use std::{
 	collections::HashSet,
 	fs::{self, File},
 	io::{BufRead, BufReader},
-	sync::{Arc, RwLock},
+	sync::{Arc, Mutex, RwLock},
 	process::Command,
-	time::Duration
+	time::{Duration, Instant}
 };
 
 use tokio::time::{interval, MissedTickBehavior};
@@ -46,7 +47,9 @@ impl TypeMapKey for PhishingKey {
 	type Value = Arc<PhishingProtect>;
 }
 
-struct Handler;
+struct Handler {
+	last_sticky_update: Mutex<Instant>
+}
 
 #[async_trait]
 impl EventHandler for Handler {
@@ -92,7 +95,44 @@ impl EventHandler for Handler {
 			}
 		}
 
-		if msg.content.to_lowercase().contains("silly") {
+		let help_channel_id = 1248143441242619955;
+		if msg.channel_id.get() == help_channel_id {
+			let mut should_update = false;
+
+			{
+				let mut last_update = self.last_sticky_update.lock().unwrap();
+				if Instant::now().duration_since(*last_update).as_secs() >= 3 {
+					*last_update = Instant::now(); // Update the time while we have the lock
+					should_update = true;
+				}
+			}
+
+			if should_update {
+				let sticky_message = r#"# CHECK THE PINS FIRST BEFORE ASKING A QUESTION
+# 1. Having runtime errors? Install Hachimi Edge from <#1248142172004548620>.
+# 2. Did you press "Restart" on the shutdown menu after installing Hachimi?
+# 3. Do you play Riot games? If so, Vanguard is preventing you to play Umamusume with Hachimi installed.
+# 4. Did you enable Disable Fullscreen Optimizations?
+# 5. Have you tried backreading previous messages?
+# 6. If none of these cover the answers to the issues you're facing, ping the Helpdesk role.
+
+**You will be intentionally ignored** if a fix is already available for your problems on the pinned messages, the site or previous messages in this channel.
+
+Check <#1248143380437930085> for known issues/problems."#;
+
+				if let Ok(messages) = msg.channel_id.messages(&ctx.http, GetMessages::new().limit(12)).await {
+					for old_msg in messages {
+						if old_msg.author.id == ctx.cache.current_user().id && old_msg.content.starts_with("# 1. Did you press") {
+							let _ = old_msg.delete(&ctx.http).await;
+							break;
+						}
+					}
+				}
+				let _ = msg.channel_id.say(&ctx.http, sticky_message).await;
+			}
+		}
+
+		if msg.content.to_lowercase().contains("sil") {
 			let emoji = "<a:sildance:1462056515056828499>";
 			if let Err(why) = msg.reply(&ctx.http, emoji).await {
 				println!("Error sending message: {:?}", why);
@@ -161,7 +201,9 @@ async fn main() {
 		| GatewayIntents::MESSAGE_CONTENT;
 
 	let mut client = Client::builder(&token, intents)
-		.event_handler(Handler)
+		.event_handler(Handler {
+			last_sticky_update: Mutex::new(Instant::now())
+		})
 		.await
 		.expect("Err creating client");
 
