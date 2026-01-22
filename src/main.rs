@@ -3,7 +3,7 @@ use serenity::{
 	model::{
 		channel::Message,
 		gateway::Ready,
-		id::MessageId
+		id::*
 	},
 	prelude::*
 };
@@ -54,8 +54,9 @@ impl TypeMapKey for PhishingKey {
 }
 
 struct Handler {
-	last_sticky_update: Mutex<Instant>,
-	last_sticky_id: Mutex<Option<MessageId>>
+	last_sticky_id: Mutex<Option<MessageId>>,
+	last_author_id: Mutex<Option<UserId>>,
+	last_activity_time: Mutex<Instant>
 }
 
 fn should_reply(rate: f64) -> bool {
@@ -82,7 +83,6 @@ impl EventHandler for Handler {
 		let is_phishing = {
 			let bad_links = protect.set.read().unwrap();
 			msg.content.split_whitespace().any(|word| {
-				// Direct, raw match against the full link in the database
 				bad_links.contains(&word.to_lowercase())
 			})
 		};
@@ -104,34 +104,41 @@ impl EventHandler for Handler {
 
 		let help_channel_id = 1248143441242619955;
 		if msg.channel_id.get() == help_channel_id {
-			let mut should_update = false;
-
-			{
-				let mut last_update = self.last_sticky_update.lock().unwrap();
-				if Instant::now().duration_since(*last_update).as_secs() >= 30 {
-					*last_update = Instant::now();
-					should_update = true;
-				}
-			}
-
-			if should_update {
-				let sticky_message = r#"# :warning: BEFORE ASKING A QUESTION :warning:
+			let sticky_message = r#"# :warning: BEFORE ASKING A QUESTION :warning:
 - Having runtime errors? Install [Hachimi Edge](https://hachimi.noccu.art).
 - Check for your issue in [Troubleshooting](https://hachimi.noccu.art/docs/hachimi/troubleshooting).
 - Check the pins and backread messsages in this channel.
 
 You will be intentionally ignored if the sources mentioned above cover your issue.
 Bugs instead of tech issue? Check <#1248143380437930085>."#;
+			let now = Instant::now();
+			let mut should_delete_id = None;
+			let mut should_post = false;
 
-				let old_id = {
-					let mut id_lock = self.last_sticky_id.lock().unwrap();
-					id_lock.take()
-				};
-
-				if let Some(id) = old_id {
-					let _ = msg.channel_id.delete_message(&ctx.http, id).await;
+			{
+				let mut last_author = self.last_author_id.lock().unwrap();
+				let mut last_activity = self.last_activity_time.lock().unwrap();
+				let mut id_lock = self.last_sticky_id.lock().unwrap();
+	
+				if let Some(prev_author) = *last_author {
+					if prev_author != msg.author.id {
+						*last_activity = now;
+						should_delete_id = id_lock.take();
+					}
 				}
 
+				*last_author = Some(msg.author.id);
+				let idle_duration = now.duration_since(*last_activity);
+				if idle_duration.as_secs() >= 180 && id_lock.is_none() {
+					should_post = true;
+				}
+			}
+	
+			if let Some(id) = should_delete_id {
+				let _ = msg.channel_id.delete_message(&ctx.http, id).await;
+			}
+
+			if should_post {
 				if let Ok(new_msg) = msg.channel_id.say(&ctx.http, sticky_message).await {
 					let mut id_lock = self.last_sticky_id.lock().unwrap();
 					*id_lock = Some(new_msg.id);
@@ -217,8 +224,9 @@ async fn main() {
 
 	let mut client = Client::builder(&token, intents)
 		.event_handler(Handler {
-			last_sticky_update: Mutex::new(Instant::now()),
-			last_sticky_id: Mutex::new(None)
+			last_sticky_id: Mutex::new(None),
+			last_author_id: Mutex::new(None),
+			last_activity_time: Mutex::new(Instant::now())
 		})
 		.await
 		.expect("Err creating client");
