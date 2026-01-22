@@ -112,9 +112,7 @@ impl EventHandler for Handler {
 # 1. Having runtime errors? Install Hachimi Edge from <#1248142172004548620>.
 # 2. Did you press "Restart" on the shutdown menu after installing Hachimi?
 # 3. Do you play Riot games? If so, Vanguard is preventing you to play Umamusume with Hachimi installed.
-# 4. Did you enable Disable Fullscreen Optimizations?
-# 5. Have you tried backreading previous messages?
-# 6. If none of these cover the answers to the issues you're facing, ping the Helpdesk role.
+# 4. If none of these cover the answers to the issues you're facing, ping the Helpdesk role.
 
 ## You will be intentionally ignored if a fix is already available for your problems on the pinned messages, the site or previous messages in this channel.
 
