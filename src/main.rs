@@ -2,7 +2,7 @@ use serenity::{
 	async_trait,
 	builder::GetMessages,
 	model::{
-		channel::Message,
+		channel::*,
 		gateway::Ready,
 		id::*,
 		Timestamp
@@ -124,7 +124,7 @@ async fn start_sticky_worker(ctx: Context, state: Arc<StickyState>) {
 
 struct Handler;
 
-fn should_reply(rate: f64) -> bool {
+fn should_show(rate: f64) -> bool {
 	rand::rng().random_bool(rate)
 }
 
@@ -188,9 +188,9 @@ impl EventHandler for Handler {
 		}
 
 		// let content_lower = msg.content.to_lowercase();
-		// 0.2% if on help channel otherwise 1%
-		let rate = if msg.channel_id.get() == HELP_CHANNEL_ID { 0.002 } else { 0.01 };
-		if should_reply(rate) {
+		// 0.01% on all channels
+		// let rate = if msg.channel_id.get() == HELP_CHANNEL_ID { 0.001 } else { 0.01 };
+		if should_show(0.0001) {
 			let silly_emojis = [
 				"<a:sildance:1462056515056828499>",
 				"<:sillier:1463878217197682865>",
@@ -201,6 +201,9 @@ impl EventHandler for Handler {
 			let index: usize = rng_range(0..silly_emojis.len());
 			let emoji = silly_emojis[index];
 			let _ = msg.reply(&ctx.http, emoji).await;
+			if let Ok(reaction) = ReactionType::try_from(emoji) {
+				let _ = msg.react(&ctx.http, reaction).await;
+			}
 		}
 	}
 
