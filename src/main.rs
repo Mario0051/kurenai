@@ -121,7 +121,6 @@ async fn start_sticky_worker(ctx: Context, state: Arc<StickyState>) {
 		}
 	}
 }
-		
 
 struct Handler;
 
@@ -189,8 +188,8 @@ impl EventHandler for Handler {
 		}
 
 		// let content_lower = msg.content.to_lowercase();
-		// 0.2% if on help channel otherwise 3%
-		let rate = if msg.channel_id.get() == HELP_CHANNEL_ID { 0.002 } else { 0.03 };
+		// 0.2% if on help channel otherwise 1%
+		let rate = if msg.channel_id.get() == HELP_CHANNEL_ID { 0.002 } else { 0.01 };
 		if should_reply(rate) {
 			let silly_emojis = [
 				"<a:sildance:1462056515056828499>",
