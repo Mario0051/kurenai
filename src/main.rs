@@ -188,8 +188,8 @@ impl EventHandler for Handler {
 		}
 
 		// let content_lower = msg.content.to_lowercase();
-		// 0.01% on all channels
-		// let rate = if msg.channel_id.get() == HELP_CHANNEL_ID { 0.001 } else { 0.01 };
+		// 0.01% on help channel, 0.1% on all channels
+		let rate = if msg.channel_id.get() == HELP_CHANNEL_ID { 0.0001 } else { 0.001 };
 		if should_show(0.0001) {
 			let silly_emojis = [
 				"<a:sildance:1462056515056828499>",
